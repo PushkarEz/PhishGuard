@@ -1,10 +1,3 @@
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except:
-    pass
-
-
 from flask import Flask, render_template, request, jsonify
 import requests
 import hashlib
@@ -184,14 +177,16 @@ def check_qr():
         return jsonify({"error": "No QR image uploaded"})
     file = request.files['file']
     try:
+        import io, numpy as np, cv2
         from PIL import Image
-        import pyzbar.pyzbar as pyzbar
-        import io
-        img = Image.open(io.BytesIO(file.read()))
-        decoded = pyzbar.decode(img)
-        if not decoded:
-            return jsonify({"error": "No QR code found in this image. Please upload a clear QR code image."})
-        qr_data = decoded[0].data.decode('utf-8')
+        pil_img = Image.open(io.BytesIO(file.read())).convert('RGB')
+        img_np = np.array(pil_img)
+        img_cv = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
+        detector = cv2.QRCodeDetector()
+        qr_data, _, _ = detector.detectAndDecode(img_cv)
+        if not qr_data:
+            return jsonify({"error": "No QR code found. Please upload a clear QR code image."})
+        qr_data = qr_data.strip()
         # Check if it's a URL
         if qr_data.startswith('http://') or qr_data.startswith('https://') or ('.' in qr_data and ' ' not in qr_data):
             # Scan the URL from QR
@@ -240,7 +235,7 @@ def check_qr():
             coach = get_coach(f"QR code contains text: {qr_data[:100]}")
             return jsonify({"verdict": "QR Scanned", "color": "blue", "message": "QR contains text (not a URL).", "qr_data": qr_data, "ai_report": ai_result, "coach": coach, "type": "text"})
     except ImportError:
-        return jsonify({"error": "QR scanning library not installed. Run: pip install pillow pyzbar"})
+        return jsonify({"error": "QR scan failed. Please try a clearer image."})
     except Exception as e:
         print("QR ERROR:", e)
         return jsonify({"error": f"QR scan failed: {str(e)}"})
@@ -383,17 +378,21 @@ def check_whatsapp():
     message = request.json.get('message', '').strip()
     if not message:
         return jsonify({"error": "No message provided"})
-    ai_result = ask_ai(f"""You are a scam detection expert for Indian users.
-Analyze this message: "{message}"
-Reply in EXACTLY this format:
-VERDICT|COLOR|ANALYSIS|REDFLAGS|STEP1|STEP2|STEP3
-- VERDICT: Scam Detected, Fake News, Suspicious, or Looks Genuine
-- COLOR: red, orange, or green
-- ANALYSIS: 1-2 sentences
-- REDFLAGS: list flags or write: No red flags found
-- STEP1/2/3: one action each
-Example:
-Scam Detected|red|This is a lottery scam.|Fake prize, urgency, suspicious link|Never click links from unknown senders|Report to cybercrime.gov.in|Warn your family about this""")
+    ai_result = ask_ai(f"""Analyze if this is a scam. Reply with ONLY 7 values separated by pipe | symbol. No other text, no labels, no explanation outside the format.
+
+Message: "{message}"
+
+Format: verdict|color|analysis|redflags|step1|step2|step3
+
+Rules:
+- verdict: exactly one of: Scam Detected / Fake News / Suspicious / Looks Genuine
+- color: exactly one of: red / orange / green
+- analysis: 1 sentence
+- redflags: comma separated or: No red flags
+- step1, step2, step3: one short action each
+
+Output ONLY the 7 pipe-separated values. Example output:
+Scam Detected|red|This is a lottery scam targeting Indians.|Fake prize, urgency, suspicious link|Do not click any links|Report to cybercrime.gov.in|Warn your family and friends""")
 
     parts = [p.strip() for p in ai_result.split('|')]
     while len(parts) < 7:

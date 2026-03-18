@@ -2,5 +2,6 @@ flask
 requests
 gunicorn
 pillow
-pyzbar
+opencv-python-headless
+numpy
 python-dotenv
