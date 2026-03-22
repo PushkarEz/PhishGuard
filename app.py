@@ -534,15 +534,25 @@ def run_telegram_bot():
         print(f"Telegram bot error: {e}")
 
 # ── START TELEGRAM BOT ──────────────────────────────────
-# Runs at module level so gunicorn also starts the bot
-import threading as _threading
-_tg_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-if _tg_token:
-    _bot_thread = _threading.Thread(target=run_telegram_bot, daemon=True)
-    _bot_thread.start()
-    print("✅ ByteX Telegram Bot started!")
-else:
-    print("⚠️  TELEGRAM_BOT_TOKEN not set — bot not started")
+def _start_bot_delayed():
+    try:
+        import time
+        time.sleep(5)  # wait for Flask/gunicorn to fully start
+        run_telegram_bot()
+    except Exception as e:
+        print(f"⚠️  Bot error: {e}")
+
+try:
+    import threading as _threading
+    _tg_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if _tg_token:
+        _t = _threading.Thread(target=_start_bot_delayed, daemon=True)
+        _t.start()
+        print("✅ ByteX Telegram Bot starting in 5s...")
+    else:
+        print("⚠️  TELEGRAM_BOT_TOKEN not set — bot not started")
+except Exception as _e:
+    print(f"⚠️  Bot startup skipped: {_e}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
