@@ -16,9 +16,16 @@ PhishGuard is a phishing detection system using a browser extension and backend 
 
 ## ▶️ How to Run
 pip install -r requirements.txt  
-python app.py
+python app.py  
 
 ## 🌐 Live Demo
-🔗 https://phishguard-8qm0.onrender.com/
-
+🔗 https://phishguard-8qm0.onrender.com/  
 > Backend is deployed and running successfully on Render.
+
+## 🧩 Chrome Extension Setup
+1. Open Chrome → `chrome://extensions/`  
+2. Enable **Developer Mode**  
+3. Click **Load unpacked**  
+4. Select the `extension/` folder  
+
+✅ Extension will start detecting phishing URLs.
