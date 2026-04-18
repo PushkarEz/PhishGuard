@@ -11,8 +11,8 @@ except: pass
 
 app = Flask(__name__)
 
-VT_API_KEY = os.environ.get("VT_API_KEY")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+VT_API_KEY = (os.environ.get("VT_API_KEY") or "").strip()
+GROQ_API_KEY = (os.environ.get("GROQ_API_KEY") or "").strip()
 
 
 def ask_ai(prompt):
@@ -26,6 +26,7 @@ def ask_ai(prompt):
             timeout=25
         )
         data = res.json()
+        print("GROQ FULL RESPONSE:", data)  # ADD THIS
         reply = data.get('choices', [{}])[0].get('message', {}).get('content', '')
         return reply.strip() if reply else "Could not get response."
     except Exception as e:
@@ -34,7 +35,7 @@ def ask_ai(prompt):
 
 
 def get_coach(context):
-    raw = ask_ai(f"""You are ByteX AI Security Coach.
+    raw = ask_ai(f"""You are PhishGuard AI Security Coach.
 Based on this security result: '{context}'
 Give exactly 3 short action steps the user should take right now.
 STRICT RULES:
@@ -380,7 +381,7 @@ def check_breach():
         coach = get_coach(f"Email found in {len(selected)} data breaches")
         return jsonify({"verdict": f"Found in {len(selected)} Breaches!", "color": "red", "message": f"Email exposed in {len(selected)} known breach(es). See timeline below.", "breaches": selected, "coach": coach, "demo": True})
     try:
-        res = requests.get(f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}", headers={"User-Agent": "ByteX-Security-Scanner", "hibp-api-key": HIBP_API_KEY}, params={"truncateResponse": "false"}, timeout=15)
+        res = requests.get(f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}", headers={"User-Agent": "PhishGuard-Security-Scanner", "hibp-api-key": HIBP_API_KEY}, params={"truncateResponse": "false"}, timeout=15)
         if res.status_code == 404:
             coach = get_coach("Email not found in any known data breach")
             return jsonify({"verdict": "All Clear!", "color": "green", "message": "Not found in any known data breaches.", "breaches": [], "coach": coach})
@@ -437,28 +438,84 @@ Scam Detected|red|This is a lottery scam targeting Indians.|Fake prize, urgency,
 @app.route('/ask-ai', methods=['POST'])
 def ask_ai_route():
     message = request.json.get('message', '').strip()
+    history = request.json.get('history', [])
     if not message:
-        return jsonify({"reply": "Arre bhai kuch toh poocho! 😄"})
+        return jsonify({"reply": "Hey! Ask me anything — cybersecurity tips, general questions, or scan results! 😊"})
 
-    full_prompt = f"""You are ByteX AI — a cybersecurity assistant built by Pushkar Shinde from Pune.
+    system_prompt = """You are PhishGuard AI — a smart, friendly assistant built by Pushkar Shinde from Pune, India.
 
-STRICT RULES:
-- Max 2-3 sentences per reply. NO long paragraphs ever.
-- Be friendly and slightly funny — but BRIEF. Don't overdo it.
-- No essay writing. Get to the point fast.
-- Use 1 emoji max per reply.
+YOUR PERSONALITY:
+- Warm, helpful, and conversational — like a knowledgeable friend, not a robot
+- Slightly witty and fun, but never overdoing it
+- Empathetic — if someone is worried about a scam, reassure them first
+- Clear and concise — no unnecessary fluff, but never cold or robotic
 
-FACTS:
-- ByteX = India's AI cybersecurity platform. Tagline: "Scammers hate him. Meet ByteX."
-- Built by Pushkar Shinde (Pune University, vibe coder 😄) + Pavan Biradar (idea partner)
-- Features: URL Scanner, Email Breach, WhatsApp Scam Detector, Password Check, IP Checker, File Scanner, QR Safety, Encrypt/Decrypt, Steganography, Self-Destruct Message
-- Pushkar's links: LinkedIn https://www.linkedin.com/in/pushkar-shinde1608/ | GitHub https://github.com/PushkarEz | Instagram https://www.instagram.com/pushkar_shinde_16/
-- For feedback → tell user to click Feedback in top navigation
+RESPONSE STYLE:
+- Keep replies to 2-4 sentences for simple questions. For complex topics, up to 6-7 sentences.
+- Use simple words everyone can understand
+- Use 1-2 emojis per reply when appropriate (skip emojis for serious/scary situations)
+- Format with short paragraphs if needed, never walls of text
+- For lists, use short clean bullets (max 4-5 items)
 
-Question: {message}"""
+WHAT YOU CAN HELP WITH:
+1. CYBERSECURITY (your specialty):
+   - Explain scan results, phishing, malware, scams in simple terms
+   - Give safety tips and best practices
+   - Help users understand if something is dangerous
+   - Explain VPNs, firewalls, 2FA, encryption, etc.
 
-    reply = ask_ai(full_prompt)
-    return jsonify({"reply": reply})
+2. GENERAL QUESTIONS (you're a smart all-round AI!):
+   - Science, technology, history, general knowledge
+   - Math help and explanations
+   - Writing help, grammar, creative tasks
+   - Health and lifestyle general tips (recommend a doctor for medical specifics)
+   - Career advice, study tips, productivity hacks
+   - Coding help and tech questions
+
+3. ABOUT PHISHGUARD:
+   - PhishGuard = India's AI-powered cybersecurity platform. Tagline: "Scammers hate us. Meet PhishGuard."
+   - Built by Pushkar Shinde (Pune University) + Pavan Biradar (idea partner)
+   - Features: URL Scanner, Email Breach Checker, WhatsApp Scam Detector, Password Strength Check, IP Address Checker, File Scanner, QR Code Safety, Encrypt/Decrypt Tool, Steganography, Self-Destruct Message
+   - Powered by VirusTotal (70+ security engines) + AI analysis
+   - Completely free to use
+   - Pushkar's LinkedIn: https://www.linkedin.com/in/pushkar-shinde1608/
+   - Pushkar's GitHub: https://github.com/PushkarEz
+   - Pushkar's Instagram: https://www.instagram.com/pushkar_shinde_16/
+   - For feedback → click "Feedback" in the top navigation bar
+
+IMPORTANT RULES:
+- NEVER say you cannot help with normal questions — you are a capable AI assistant!
+- If unsure about something very specific, say so honestly but still try to help
+- For medical/legal/financial specifics, give general info and recommend a professional
+- Be supportive if someone seems stressed or scared about a security threat
+- Never be dismissive or robotic"""
+
+    messages = []
+    for h in history[-6:]:
+        if h.get('role') in ('user', 'assistant') and h.get('content'):
+            messages.append({"role": h['role'], "content": h['content']})
+    messages.append({"role": "user", "content": message})
+
+    try:
+        if not GROQ_API_KEY:
+            return jsonify({"reply": "AI service not configured. Please set GROQ_API_KEY. 🔧"})
+        res = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "llama-3.1-8b-instant",
+                "messages": [{"role": "system", "content": system_prompt}] + messages,
+                "max_tokens": 600,
+                "temperature": 0.7
+            },
+            timeout=25
+        )
+        data = res.json()
+        reply = data.get('choices', [{}])[0].get('message', {}).get('content', '')
+        return jsonify({"reply": reply.strip() if reply else "Hmm, I couldn't get a response. Try again! 😅"})
+    except Exception as e:
+        print("GROQ ERROR:", e)
+        return jsonify({"reply": "Something went wrong on my end. Please try again in a moment! 🙏"})
 
 
 @app.route('/submit-feedback', methods=['POST'])
@@ -500,7 +557,7 @@ def submit_feedback():
 def get_feedbacks():
     import json
     secret = request.args.get('key', '')
-    if secret != os.environ.get('ADMIN_KEY', 'bytex-admin-2026'):
+    if secret != os.environ.get('ADMIN_KEY', 'phishguard-admin-2026'):
         return jsonify({"error": "Unauthorized"}), 401
     try:
         if os.path.exists('feedback.json'):
@@ -513,7 +570,7 @@ def get_feedbacks():
 
 
 def run_telegram_bot():
-    """Run ByteX Telegram bot in background thread"""
+    """Run PhishGuard Telegram bot in background thread"""
     try:
         import importlib.util, sys
         # Get absolute path of current directory
@@ -529,7 +586,7 @@ def run_telegram_bot():
         if not bot_path:
             print(f"❌ Bot file not found in {base_dir}! Files: {os.listdir(base_dir)}")
             return
-        spec = importlib.util.spec_from_file_location("bytex_bot", bot_path)
+        spec = importlib.util.spec_from_file_location("phishguard_bot", bot_path)
         bot_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bot_module)
         bot_module.main()
@@ -551,7 +608,7 @@ try:
     if _tg_token:
         _t = _threading.Thread(target=_start_bot_delayed, daemon=True)
         _t.start()
-        print("✅ ByteX Telegram Bot starting in 5s...")
+        print("✅ PhishGuard Telegram Bot starting in 5s...")
     else:
         print("⚠️  TELEGRAM_BOT_TOKEN not set — bot not started")
 except Exception as _e:
