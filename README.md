@@ -17,3 +17,8 @@ PhishGuard is a phishing detection system using a browser extension and backend 
 ## ▶️ How to Run
 pip install -r requirements.txt  
 python app.py
+
+## 🌐 Live Demo
+🔗 https://phishguard-8qm0.onrender.com/
+
+> Backend is deployed and running successfully on Render.
