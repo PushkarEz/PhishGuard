@@ -2,16 +2,19 @@
 
 ## 💡 Implementation
 We developed a working prototype that includes:
-- A Chrome extension to monitor URLs
-- A Flask backend to process requests
+- Chrome extension to monitor URLs
+- Flask backend to process requests
 - Basic phishing detection logic
 
-## 🖥 Features Implemented
+## ⚙️ Features Implemented
 - URL scanning
 - User alert system
 - Backend API communication
 
+## 🌐 Live Prototype
+https://phishguard-8qm0.onrender.com/
+
 ## 🔮 Future Improvements
 - AI-based detection
-- Better UI
+- Improved UI/UX
 - Database integration
