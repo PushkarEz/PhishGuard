@@ -3,6 +3,8 @@
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,50:1E293B,100:0284C7&height=210&section=header&text=PhishGuard&fontSize=54&fontColor=F8FAFC&animation=fadeIn&fontAlignY=38&desc=Phishing%20Detection%20%26%20URL%20Threat%20Analysis&descAlignY=60&descSize=16" width="100%" alt="PhishGuard Banner" />
 </div>
 
+<img src="./assets/preview.png" alt="PhishGuard UI Preview" width="100%" />
+
 <!-- Typing Tagline -->
 <div align="center">
   <a href="https://phishguard-8qm0.onrender.com/">
@@ -15,7 +17,7 @@
 <!-- Live Status & Repo Badges -->
 <div align="center">
   <a href="https://phishguard-8qm0.onrender.com/" target="_blank">
-    <img src="https://img.shields.io/website?url=https%3A%2F%2Fphishguard-8qm0.onrender.com%2F&up_message=ONLINE&down_message=WAKING%20UP&label=LIVE%20DEMO&style=for-the-badge&color=10B981" alt="Live Demo Status" />
+    <src="https://img.shields.io/website?url=https%3A%2F%2Fphishguard-8qm0.onrender.com%2F&up_message=ONLINE&down_message=WAKING%20UP&label=LIVE%20DEMO&style=for-the-badge&color=10B981" alt="Live Demo Status" />
   </a>
   <a href="https://github.com/PushkarEz/PhishGuard/stargazers">
     <img src="https://img.shields.io/github/stars/PushkarEz/PhishGuard?style=for-the-badge&color=0F172A" alt="GitHub Stars" />
