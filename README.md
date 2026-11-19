@@ -1,6 +1,6 @@
 <!-- Animated Hero Banner -->
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,50:1E293B,100:0284C7&height=210&section=header&text=PhishGuard&fontSize=54&fontColor=F8FAFC&animation=fadeIn&fontAlignY=38&desc=Phishing%20Detection%20%26%20URL%20Threat%20Analysis&descAlignY=60&descSize=16" width="100%"  />
+  
 </div>
 
 <img src="./assets/preview.png" alt="PhishGuard UI Preview" width="100%" />
